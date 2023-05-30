@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-statefulset
+spec:
+  replicas: 1
+  serviceName: db-service
+  selector:
+    matchLabels:
+      app: app-db
+  template:
+    metadata:
+      labels:
+        app: app-db
+    spec:
+      containers:
+        - name: app-db-container
+          image: postgres:13
+          env:
+            - name: POSTGRES_DB
+              value: football-db
+            - name: POSTGRES_USER
+              value: user
+            - name: POSTGRES_PASSWORD
+              value: password
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: 1Gi
+              cpu: "1"
+      volumes:
+        - name: postgres-data-storage
+          persistentVolumeClaim:
+            claimName: db-storage-persisent-volume-claim

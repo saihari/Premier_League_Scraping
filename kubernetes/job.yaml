@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: football-viz-job
+spec:
+  template:
+    metadata:
+      name: football-viz-pod
+    spec:
+      containers:
+        - name: football-viz-container
+          image: football_viz
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: host
+              value: "localhost"
+              #value: db-service
+            - name: database
+              value: "football-db"
+            - name: user
+              value: "user"
+            - name: password
+              value: "password"
+            - name: port
+              value: "5432"
+          command:
+            - "python"
+            - "job.py"
+      restartPolicy: Never
+  backoffLimit: 0

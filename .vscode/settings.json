@@ -1,0 +1,9 @@
+{
+    "yaml.schemas": {
+      "kubernetes": "*.yaml",
+    },
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none"
+}
