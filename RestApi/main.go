@@ -2,13 +2,21 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/iancoleman/strcase"
 
 	_ "github.com/lib/pq"
 
 	"github.com/gin-gonic/gin"
 )
+
+type App struct {
+	DB *sql.DB
+}
 
 const (
 	database = "football-db"
@@ -17,57 +25,6 @@ const (
 	host     = "192.168.59.101"
 	port     = "30432"
 )
-
-// album represents data about a record album.
-type album struct {
-	ID     string  `json:"id"`
-	Title  string  `json:"title"`
-	Artist string  `json:"artist"`
-	Price  float64 `json:"price"`
-}
-
-// albums slice to seed record album data.
-var albums = []album{
-	{ID: "1", Title: "Blue Train", Artist: "John Coltrane", Price: 56.99},
-	{ID: "2", Title: "Jeru", Artist: "Gerry Mulligan", Price: 17.99},
-	{ID: "3", Title: "Sarah Vaughan and Clifford Brown", Artist: "Sarah Vaughan", Price: 39.99},
-}
-
-// getAlbums responds with the list of all albums as JSON.
-func getAlbums(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, albums)
-}
-
-// postAlbums adds an album from JSON received in the request body.
-func postAlbums(c *gin.Context) {
-	var newAlbum album
-
-	// Call BindJSON to bind the received JSON to
-	// newAlbum.
-	if err := c.BindJSON(&newAlbum); err != nil {
-		return
-	}
-
-	// Add the new album to the slice.
-	albums = append(albums, newAlbum)
-	c.IndentedJSON(http.StatusCreated, newAlbum)
-}
-
-// getAlbumByID locates the album whose ID value matches the id
-// parameter sent by the client, then returns that album as a response.
-func getAlbumByID(c *gin.Context) {
-	id := c.Param("id")
-
-	// Loop over the list of albums, looking for
-	// an album whose ID value matches the parameter.
-	for _, a := range albums {
-		if a.ID == id {
-			c.IndentedJSON(http.StatusOK, a)
-			return
-		}
-	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album not found"})
-}
 
 func main() {
 
@@ -86,11 +43,83 @@ func main() {
 		panic(err)
 	}
 
+	// Initialize the application
+	app := &App{
+		DB: db,
+	}
+
 	fmt.Println("Successfully connected to database!")
 
 	router := gin.Default()
-	router.GET("/albums", getAlbums)
-	router.GET("/albums/:id", getAlbumByID)
-	router.POST("/albums", postAlbums)
+	router.GET("/PL/:team", app.GetTeamPerformance)
 	router.Run("localhost:8080")
+}
+
+func (app *App) GetTeamPerformance(c *gin.Context) {
+	team := c.Param("team")
+
+	fmt.Println("Querying For:", strcase.ToCamel(team))
+
+	// rows, err := app.DB.Query(`Select * from regular_season where "Squad" = $1`, strcase.ToCamel(team))
+	query := fmt.Sprintf(`Select * from regular_season where "Squad" = '%s';`, strcase.ToCamel(team))
+	fmt.Println(query)
+	rows, err := app.DB.Query(query)
+	if err != nil {
+
+		c.JSON(500, gin.H{"error": "Failed to retrieve data"})
+		return
+	}
+	defer rows.Close()
+
+	// Create a map to hold the rows
+	users := []map[string]interface{}{}
+
+	// Iterate over the rows
+	for rows.Next() {
+
+		// Get column names
+		columns, err := rows.Columns()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Create a slice to hold column values
+		values := make([]interface{}, len(columns))
+		columnPointers := make([]interface{}, len(columns))
+		for i := range columns {
+			columnPointers[i] = &values[i]
+		}
+
+		// Scan the row values into the columnPointers slice
+		err = rows.Scan(columnPointers...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Create a map to hold the row data
+		rowData := map[string]interface{}{}
+		for i, column := range columns {
+			rowData[column] = values[i]
+		}
+
+		// Append the row data to the users slice
+		users = append(users, rowData)
+	}
+
+	// Check for errors during iteration
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Convert the users slice to JSON
+	jsonData, err := json.Marshal(users)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Set the response content type to JSON
+	c.Header("Content-Type", "application/json")
+
+	// Send the JSON data as the response
+	c.IndentedJSON(http.StatusOK, string(jsonData))
 }
