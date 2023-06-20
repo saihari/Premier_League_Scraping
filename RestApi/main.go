@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -17,13 +18,19 @@ type App struct {
 	DB *sql.DB
 }
 
-const (
-	database = "football-db"
-	user     = "user"
-	password = "password"
-	host     = "192.168.59.101"
-	port     = "30432"
-)
+// const (
+// 	database = "football-db"
+// 	user     = "user"
+// 	password = "password"
+// 	host     = "192.168.59.101"
+// 	port     = "30432"
+// )
+
+var DATABASE = os.Getenv("DATABASE")
+var USER = os.Getenv("USER")
+var PASSWORD = os.Getenv("PASSWORD")
+var HOST = os.Getenv("HOST")
+var PORT = os.Getenv("PORT")
 
 func runQuery(rows *sql.Rows) (interface{}, error) {
 
@@ -74,7 +81,7 @@ func main() {
 
 	postgresqlDbInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, database)
+		HOST, PORT, USER, PASSWORD, DATABASE)
 
 	db, err := sql.Open("postgres", postgresqlDbInfo)
 	if err != nil {

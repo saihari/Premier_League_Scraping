@@ -10,17 +10,47 @@ PL_SCORES_FIXTURES_URL = (
 )
 
 # Database Configurations
-# database = os.environ["database"]
-# user = os.environ["user"]
-# password = os.environ["password"]
-# host = os.environ["host"]
-# port = os.environ["port"]
+database = os.environ["database"]
+user = os.environ["user"]
+password = os.environ["password"]
+host = os.environ["host"]
+port = os.environ["port"]
 
-database = "football-db"
-user = "user"
-password = "password"
-host = "192.168.59.101"
-port = "30432"
+# database = "football-db"
+# user = "user"
+# password = "password"
+# host = "192.168.59.101"
+# port = "30432"
+
+
+def clean_column_names(df):
+    columns = []
+    for each in df.columns:
+        if "+/-" in each:
+            each = each.replace("+/-", "_plus_minus")
+        if "#" in each:
+            each = each.replace("#", "num")
+        if "/" in each:
+            each = each.replace("/", "_per_")
+        if "%" in each:
+            each = each.replace("%", "_pct")
+        if "-" in each:
+            each = each.replace("-", "_")
+        if ":" in each:
+            each = each.replace(":", "_")
+        if "+" in each:
+            each = each.replace("+", "_and_")
+
+        each = each.lower()
+
+        columns.append(each)
+
+    df.columns = columns
+
+    if "squad" in df.columns:
+        df["squad"] = df["squad"].str.lower()
+
+    return df
 
 
 def flatten_df(df):
@@ -62,19 +92,18 @@ def transform_combine(raw_squad_df, raw_opponent_df):
     Returns:
         pd.DataFrame: Appended Stats Dataframe containing stats of both squad and opponent stats.
     """
-
-    # Squad Dataframe: Flatten and Creating the Value colum
-    raw_squad_df = flatten_df(raw_squad_df.copy())
-    raw_squad_df.loc[:, "Value"] = "Squad"
-
-    # Opponent Dataframe: Flatten, removing the string "VS", and Creating the Value colum
-    raw_opponent_df = flatten_df(raw_opponent_df.copy())
-    raw_opponent_df.loc[:, "Squad"] = raw_opponent_df.loc[:, "Squad"].apply(
-        lambda x: " ".join(x.split()[1:])
-    )
-    raw_opponent_df.loc[:, "Value"] = "Opponent"
-
     try:
+        # Squad Dataframe: Flatten and Creating the Value colum
+        raw_squad_df = flatten_df(raw_squad_df.copy())
+        raw_squad_df.loc[:, "Value"] = "squad"
+
+        # Opponent Dataframe: Flatten, removing the string "VS", and Creating the Value colum
+        raw_opponent_df = flatten_df(raw_opponent_df.copy())
+        raw_opponent_df.loc[:, "Squad"] = raw_opponent_df.loc[:, "Squad"].apply(
+            lambda x: " ".join(x.split()[1:])
+        )
+        raw_opponent_df.loc[:, "Value"] = "opponent"
+
         # Appending the dataframes
         stats_df = raw_opponent_df.append(raw_squad_df, ignore_index=True)
 
@@ -109,6 +138,8 @@ def pushToDB(table_name, df, conn, if_exists="replace", index=False):
 
             Defaults to False.
     """
+
+    df = clean_column_names(df.copy())
 
     # Begin a transaction
     transaction = conn.begin()
@@ -272,44 +303,46 @@ except Exception as e:
 
 print("Data Loading Phase Started....")
 
-# Creating/Updating the regular_season database
+# Creating/Updating the regular_season table  in the football-db database
 pushToDB(table_name="regular_season", df=regular_season, conn=conn)
 
-# Creating/Updating the standard_stats database
+# Creating/Updating the standard_stats table  in the football-db database
 pushToDB(table_name="standard_stats", df=standard_stats, conn=conn)
 
-# Creating/Updating the goalkeeping_stats database
+# Creating/Updating the goalkeeping_stats table  in the football-db database
 pushToDB(table_name="goalkeeping_stats", df=goalkeeping_stats, conn=conn)
 
-# Creating/Updating the advanced_goalkeeping_stats database
+# Creating/Updating the advanced_goalkeeping_stats table  in the football-db database
 pushToDB(
     table_name="advanced_goalkeeping_stats", df=advanced_goalkeeping_stats, conn=conn
 )
 
-# Creating/Updating the shooting_stats database
+# Creating/Updating the shooting_stats table  in the football-db database
 pushToDB(table_name="shooting_stats", df=shooting_stats, conn=conn)
 
-# Creating/Updating the passing_stats database
+# Creating/Updating the passing_stats table  in the football-db database
 pushToDB(table_name="passing_stats", df=passing_stats, conn=conn)
 
-# Creating/Updating the passing_types_stats database
+# Creating/Updating the passing_types_stats table  in the football-db database
 pushToDB(table_name="passing_types_stats", df=passing_types_stats, conn=conn)
 
-# Creating/Updating the goal_shot_creation_stats database
+# Creating/Updating the goal_shot_creation_stats table  in the football-db database
 pushToDB(table_name="goal_shot_creation_stats", df=goal_shot_creation_stats, conn=conn)
 
-# Creating/Updating the defensive_action_stats database
+# Creating/Updating the defensive_action_stats table  in the football-db database
 pushToDB(table_name="defensive_action_stats", df=defensive_action_stats, conn=conn)
 
-# Creating/Updating the possession_stats database
+# Creating/Updating the possession_stats table  in the football-db database
 pushToDB(table_name="possession_stats", df=possession_stats, conn=conn)
 
-# Creating/Updating the playing_time_stats database
+# Creating/Updating the playing_time_stats table  in the football-db database
 pushToDB(table_name="playing_time_stats", df=playing_time_stats, conn=conn)
 
-# Creating/Updating the miscellaneous_stats database
+# Creating/Updating the miscellaneous_stats table  in the football-db database
 pushToDB(table_name="miscellaneous_stats", df=miscellaneous_stats, conn=conn)
 
+# Creating/Updating the scores_and_fixtures table  in the football-db database
+pushToDB(table_name="scores_and_fixtures", df=raw_scores_and_fixtures, conn=conn)
 
 # Close the connection
 conn.close()

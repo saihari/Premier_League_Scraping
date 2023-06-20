@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: premier-league-rest-api
+spec:
+  selector:
+    matchLabels:
+      app: premier-league-rest-api-go
+  template:
+    metadata:
+      labels:
+        app: premier-league-rest-api-go
+    spec:
+      containers:
+        - name: go-rest-api
+          image: football_viz_api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: HOST
+              value: db-service
+            - name: DATABASE
+              value: "football-db"
+            - name: USER
+              value: "user"
+            - name: PASSWORD
+              value: "password"
+            - name: PORT
+              value: "5432"

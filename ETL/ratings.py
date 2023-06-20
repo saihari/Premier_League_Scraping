@@ -1,22 +1,23 @@
 from sqlalchemy import create_engine
 import psycopg2
 import pandas as pd
+import os
 
 import numpy as np
 from scipy.stats import rankdata
 
-user = "user"
-password = "password"
-host = "192.168.59.101"
-port = "30432"
-database = "football-db"
+# user = "user"
+# password = "password"
+# host = "192.168.59.101"
+# port = "30432"
+# database = "football-db"
 
 # Database Configurations
-# database = os.environ["database"]
-# user = os.environ["user"]
-# password = os.environ["password"]
-# host = os.environ["host"]
-# port = os.environ["port"]
+database = os.environ["database"]
+user = os.environ["user"]
+password = os.environ["password"]
+host = os.environ["host"]
+port = os.environ["port"]
 
 
 def pushToDB(table_name, df, conn, if_exists="replace", index=False):
