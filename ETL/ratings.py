@@ -64,6 +64,18 @@ def pushToDB(table_name, df, conn, if_exists="replace", index=False):
 
 
 def inverse_percentile_rank(data, min_percentile=35, max_percentile=100):
+    """
+    Ranks a data in a pandas series in an inverse manner
+    between the min and max percentile values.
+
+    Args:
+        data (pd.Series): Data Series that needs to be inversly ranked.
+        min_percentile (int, optional): Minimum rank. Defaults to 35.
+        max_percentile (int, optional): Maximum rank. Defaults to 100.
+
+    Returns:
+        pd.Series: Inverse Ranked Series.
+    """
     ranks = rankdata(data)
     min_rank = np.min(ranks)
     max_rank = np.max(ranks)
@@ -75,6 +87,18 @@ def inverse_percentile_rank(data, min_percentile=35, max_percentile=100):
 
 
 def percentile_rank(data, min_percentile=40, max_percentile=100):
+    """
+    Ranks a data in a pandas series between
+    the min and max percentile values.
+
+    Args:
+        data (pd.Series): Data Series that needs to be ranked.
+        min_percentile (int, optional): Minimum rank. Defaults to 35.
+        max_percentile (int, optional): Maximum rank. Defaults to 100.
+
+    Returns:
+        pd.Series: Ranked Series.
+    """
     ranks = rankdata(data)
     min_rank = np.min(ranks)
     max_rank = np.max(ranks)
@@ -85,6 +109,15 @@ def percentile_rank(data, min_percentile=40, max_percentile=100):
 
 
 def get_attack_data(conn):
+    """
+    Get the attack data, rank the data and calculate mean ranking.
+
+    Args:
+        conn (sqlalchemy.engine.base.Engine.Connection): Connection to the postgres DB.
+
+    Returns:
+        pd.DataFrame: attack ranking data.
+    """
     attack = pd.read_sql_query(
         sql="""SELECT t1.squad, standard_gls, standard_sot, poss FROM shooting_stats as t1 
                     INNER JOIN standard_stats as t2 ON t1.squad = t2.squad 
@@ -104,6 +137,15 @@ def get_attack_data(conn):
 
 
 def get_defence_data(conn):
+    """
+    Get the defence data, rank the data and calculate mean ranking.
+
+    Args:
+        conn (sqlalchemy.engine.base.Engine.Connection): Connection to the postgres DB.
+
+    Returns:
+        pd.DataFrame: defence ranking data.
+    """
     defence = pd.read_sql_query(
         sql="""SELECT t1.squad, int, tackles_tkl, tackles_tklw, performance_ga, performance_sota FROM defensive_action_stats as t1 
                   INNER JOIN goalkeeping_stats as t2 ON t1.squad = t2.squad 
@@ -131,6 +173,16 @@ def get_defence_data(conn):
 
 
 def get_midfield_data(conn):
+    """
+    Get the midfield data, rank the data and calculate mean ranking.
+
+    Args:
+        conn (sqlalchemy.engine.base.Engine.Connection): Connection to the postgres DB.
+
+    Returns:
+        pd.DataFrame: midfield ranking data.
+    """
+
     midfield = pd.read_sql_query(
         sql="""SELECT t1.squad, passtypes_crs, outcomes_off, outcomes_blocks, ast, kp FROM passing_types_stats as t1 
                   INNER JOIN passing_stats as t2 ON t1.squad = t2.squad 
@@ -152,6 +204,19 @@ def get_midfield_data(conn):
 
 
 def merge_data(attack, midfield, defence):
+    """
+    Merges three data frames into one base on a
+    common column called "squad".
+
+
+    Args:
+        attack (pd.DataFrame): Dataframe containing the attack ratings.
+        midfield (pd.DataFrame): Dataframe containing the midfield ratings.
+        defence (pd.DataFrame): Dataframe containing the defence ratings.
+
+    Returns:
+        pd.DataFrame: Dataframe containing all three attack, midfield and defence ratings.
+    """
     try:
         return pd.merge(
             attack[["squad", "attack"]], midfield[["squad", "midfield"]], on="squad"

@@ -24,6 +24,17 @@ port = os.environ["port"]
 
 
 def clean_column_names(df):
+    """
+    Cleaning the column names of the dataframe of any special
+    characters and special phrases like "+/-", "+", "%", etc.
+
+    Args:
+        df (pd.DataFrame): DataFrame to clean column names.
+
+    Returns:
+        pd.DataFrame: returns tate dataframe with new columns.
+    """
+
     columns = []
     for each in df.columns:
         if "+/-" in each:
@@ -58,13 +69,13 @@ def flatten_df(df):
     Flattens the DataFrame
 
     Args:
-        df (pd.DataFrame): DataFrame to Flatten
+        df (pd.DataFrame): DataFrame to Flatten.
 
     Returns:
-        pd.DataFrame: Returns Flattened DataFrame
+        pd.DataFrame: Returns Flattened DataFrame.
     """
     try:
-        # Flatten the dataframe by reducing the levels of the columns
+        # Flatten the dataframe by reducing the levels of the columns.
         df.columns = [
             "_".join([each.strip().replace(" ", "") for each in i])
             if "Unnamed" not in i[0]
@@ -86,8 +97,8 @@ def transform_combine(raw_squad_df, raw_opponent_df):
     Transforms the DataFrames denoting squad and opponent stats into a single table.
 
     Args:
-        raw_squad_df (pd.DataFrame): Squad Stats DataFrame
-        raw_opponent_df (pd.DataFrame): Opponent Stats DataFrame
+        raw_squad_df (pd.DataFrame): Squad Stats DataFrame.
+        raw_opponent_df (pd.DataFrame): Opponent Stats DataFrame.
 
     Returns:
         pd.DataFrame: Appended Stats Dataframe containing stats of both squad and opponent stats.

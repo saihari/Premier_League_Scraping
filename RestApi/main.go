@@ -32,6 +32,12 @@ var PASSWORD = os.Getenv("PASSWORD")
 var HOST = os.Getenv("HOST")
 var PORT = os.Getenv("PORT")
 
+// var DATABASE = "football-db"
+// var USER = "user"
+// var PASSWORD = "password"
+// var HOST = "192.168.59.101"
+// var PORT = "30432"
+
 func runQuery(rows *sql.Rows) (interface{}, error) {
 
 	// Create a map to hold the rows
@@ -85,12 +91,14 @@ func main() {
 
 	db, err := sql.Open("postgres", postgresqlDbInfo)
 	if err != nil {
+		fmt.Println("Not connected to database!")
 		panic(err)
 	}
 	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
+		fmt.Println("Uable to ping the database!")
 		panic(err)
 	}
 
@@ -104,7 +112,7 @@ func main() {
 	router := gin.Default()
 	router.GET("/PL/stats/:team", app.GetTeamStats)
 	router.GET("/PL/ratings/:team", app.GetTeamRatings)
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:8080")
 }
 
 func (app *App) GetTeamStats(c *gin.Context) {
